@@ -34,6 +34,31 @@ const dom = {
     canvas:     document.getElementById('canvas-container'),
 };
 
+// Create a 256x1 pixel Canvas
+const canvas = document.createElement('canvas');
+canvas.width = 256;
+canvas.height = 1;
+const context = canvas.getContext('2d');
+
+// Draw the Magma gradient
+const gradient = context.createLinearGradient(0, 0, 256, 0);
+gradient.addColorStop(0.000, '#000004'); // Black
+gradient.addColorStop(0.166, '#2d115e'); // Deep Purple
+gradient.addColorStop(0.333, '#721c84'); // Magenta
+gradient.addColorStop(0.500, '#ba3471'); // Red/Pink
+gradient.addColorStop(0.666, '#f06852'); // Orange
+gradient.addColorStop(0.833, '#fcb572'); // Light Orange
+gradient.addColorStop(1.000, '#fbfcbf'); // Pale Yellow
+
+context.fillStyle = gradient;
+context.fillRect(0, 0, 256, 1);
+
+// Convert Canvas to a Three.js Texture
+const magmaLUT = new THREE.CanvasTexture(canvas);
+magmaLUT.minFilter = THREE.LinearFilter;  // Ensure smooth interpolation
+magmaLUT.magFilter = THREE.LinearFilter;
+magmaLUT.generateMipmaps = false;         // Not needed for a 1D LUT
+
 // ── Editor (CodeJar) ─────────────────────────────────────────────────────────
 // Fix Enter key: CodeJar intercepts it; we re-bind to insert a real newline
 const highlight = (el) => window.Prism?.highlightElement(el);
@@ -113,6 +138,7 @@ function buildScene(vert, frag) {
         uCameraWorldMatrix:             { value: sdfCamera.matrixWorld },
         uCameraProjectionMatrixInverse: { value: sdfCamera.projectionMatrixInverse },
         iMode:       { value: 0 },
+        uMagmaLUT: { value: magmaLUT }
     };
 
     material = new THREE.RawShaderMaterial({
@@ -225,12 +251,13 @@ function setupUI() {
 
     // Mode toggle (shaded ↔ heatmap)
     dom.btnMode.onclick = () => {
-        const next = (uniforms.iMode.value + 1) % 3;
+        const next = (uniforms.iMode.value + 1) % 4;
         uniforms.iMode.value = next;
-        dom.modeLabel.textContent = next === 0 ? 'shaded' : next === 1 ? 'heatmap' : 'normal';
+        dom.modeLabel.textContent = next === 0 ? 'shaded' : next === 1 ? 'heatmap' : next === 2 ? 'normal' : 'depthmap';
         dom.btnMode.classList.toggle('shaded-btn', next === 0);
         dom.btnMode.classList.toggle('heatmap-btn', next === 1);
         dom.btnMode.classList.toggle('normal-btn', next === 2);
+        dom.btnMode.classList.toggle('depthmap-btn', next === 3);
     };
 
     // Screenshot

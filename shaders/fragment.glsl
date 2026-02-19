@@ -6,6 +6,8 @@ uniform vec2  iResolution;   // canvas size in pixels
 uniform float iTime;         // elapsed seconds
 uniform int   iMode;         // 0 = shaded, 1 = step heatmap, 2 = normal map
 
+uniform sampler2D uMagmaLUT; // New uniform passed from Three.js
+
 // New Camera Uniforms passed from Three.js PerspectiveCamera
 uniform vec3  uCameraPos;
 uniform mat4  uCameraWorldMatrix;
@@ -95,9 +97,13 @@ vec2 map(vec3 p) {
     bp.xy *= rot2(iTime * 0.2);
     float dBox = sdBox(bp, vec3(0.38));
 
+    vec3 mp = p - vec3(0.0, 0.0, cos(iTime * 0.5) * 0.8);
+    // float dMandelbulb = sdMandelbulb(mp);
+
     // --- distance field (can be smooth) ---
     float d = dSphere;
     d = opSmoothUnion(d, dBox, 0.3);
+    // d = opSmoothUnion(d, dMandelbulb, 0.3);
     d = min(d, dFloor);
 
     // --- material selection (NO smoothing) ---
@@ -128,7 +134,7 @@ vec2 march(vec3 ro, vec3 rd) {
 
 // ── Lighting helpers ─────────────────────────────────────────────────────────
 vec3 calcNormal(vec3 p) {
-    // Tetrahedron normal — 4 samples instead of 6
+    // Tetrahedron normal -> 4 samples instead of 6
     const vec2 e = vec2(0.001, -0.001);
     return normalize(
         e.xyy * map(p + e.xyy).x +
@@ -178,7 +184,7 @@ vec3 shade(vec3 ro, vec3 rd, vec2 hit, float mat) {
     vec3 col;
 
     if (mat < 0.5) {
-        // Floor — subtle grid
+        // Floor -> subtle grid
         vec2 gp = pos.xz;
         vec2 grid = abs(fract(gp - 0.5) - 0.5) / fwidth(gp);
         float line = min(grid.x, grid.y);
@@ -186,7 +192,7 @@ vec3 shade(vec3 ro, vec3 rd, vec2 hit, float mat) {
         col *= 0.6 + 0.4 * ao;
         col += col * dif * vec3(1.1, 1.0, 0.8);
     } else if (mat < 1.5) {
-        // Sphere — cool cyan/blue palette
+        // Sphere -> cool cyan/blue palette
         col = palette(length(pos) * 0.5 + iTime * 0.1,
             vec3(0.4, 0.5, 0.6), vec3(0.3, 0.3, 0.3),
             vec3(1.0), vec3(0.00, 0.15, 0.30));
@@ -195,7 +201,7 @@ vec3 shade(vec3 ro, vec3 rd, vec2 hit, float mat) {
         lin += fre * col * 0.5;
         col = lin;
     } else {
-        // Box — warm amber/gold palette
+        // Box -> warm amber/gold palette
         col = palette(length(pos) * 0.4 + iTime * 0.15,
             vec3(0.6, 0.5, 0.4), vec3(0.3, 0.25, 0.2),
             vec3(1.0), vec3(0.10, 0.25, 0.40));
@@ -208,6 +214,22 @@ vec3 shade(vec3 ro, vec3 rd, vec2 hit, float mat) {
     // Atmospheric fog
     col = mix(col, vec3(0.05, 0.05, 0.10), 1.0 - exp(-0.003 * hit.x * hit.x));
     return clamp(col, 0.0, 1.0);
+}
+
+vec3 magma(float t) {
+    // Clamp t to prevent wrapping, and sample from the vertical center (0.5)
+    return texture(uMagmaLUT, vec2(clamp(t, 0.0, 1.0), 0.5)).rgb;
+}
+
+vec3 magmaHighContrast(float t) {
+    // Clamp to prevent weird behavior
+    t = clamp(t, 0.0, 1.0);
+    
+    // A power of 0.4 will stretch a tiny value like 0.05 all the way up to 0.3!
+    // Tweak this exponent: Lower = more contrast at the bottom end.
+    float shapedT = pow(t, 0.4); 
+    
+    return texture(uMagmaLUT, vec2(shapedT, 0.5)).rgb;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -227,38 +249,58 @@ void main() {
     vec3 ro = uCameraPos;
 
     // March
-    vec2 hit = march(ro, rd);
+    vec2 hit = march(ro, rd); // (tHit, stepCount)
+    float stepCount = hit.y;
     float tHit = hit.x;
+
 
     float mat = -1.0;
     if (tHit < MAX_DIST) {
-        mat = map(ro + rd * tHit).y; // ← correct place
+        mat = map(ro + rd * tHit).y; 
     }
 
     vec3 col;
+    if (iMode == 0) {
+        // Normal shaded render
+        if (tHit >= MAX_DIST) {
+            // Miss -> sky gradient
+            col = vec3(0.05, 0.05, 0.12) - rd.y * 0.08;
+        } else {
+            // Hit -> shade based on material
+            col = shade(ro, rd, hit, mat);
+        }
+    } else
+
     if (iMode == 1) {
-        // Step heatmap — cool diagnostic view
-        float s = hit.y / float(MAX_STEPS);
-        col = palette(s,
-            vec3(0.1, 0.1, 0.1), vec3(0.5, 0.5, 0.5),
-            vec3(1.0, 1.0, 1.0), vec3(0.0, 0.33, 0.67));
-        if (hit.y < 0.0) col = vec3(0.03); // miss = near black
-    } else {
-        // Sky gradient for misses
-        col = vec3(0.05, 0.05, 0.12) - rd.y * 0.08;
-        if (hit.y >= 0.0) col = shade(ro, rd, hit, mat);
+        // Step heatmap -> cool diagnostic view
+        float s = stepCount / float(MAX_STEPS);
+
+        col = magma(s);
+        
+        if (tHit >= MAX_DIST || mat == 0.0) col = vec3(0.03); // miss = near black
     }
 
     if (iMode == 2) {
-        if (hit.y < 0.0) {
-            // miss → black
-            col = vec3(0.0);
+        if (tHit >= MAX_DIST || mat == 0.0) {
+            // miss -> black
+            col = vec3(0.03);
         } else {
-            vec3 n = calcNormal(ro + hit.x * rd);
+            vec3 n = calcNormal(ro + tHit * rd);
             col = n * 0.5 + 0.5;
+            
         }
     }
 
+    if (iMode == 3) {
+        if (tHit >= MAX_DIST || mat == 0.0) {
+            // miss -> black
+            col = vec3(0.03);
+        } else {
+            vec3 n = calcNormal(ro + tHit * rd);
+            col = 1.0 - vec3(tHit / MAX_DIST); // Depth map (grayscale based on distance)
+            
+        }
+    }
 
     // Gamma correction
     col = pow(max(col, 0.0), vec3(0.4545));
