@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDF Sandbox</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Prism — GLSL syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-glsl.min.js"></script>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three":   "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "codejar": "https://unpkg.com/codejar@3.7.0/codejar.js"
+        }
+    }
+    </script>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<!-- Top-right controls -->
+<div class="circle-controls ui-element">
+
+    <!-- Pause / Play -->
+    <button id="btn-pause" title="Pause / Play">
+        <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="5" y="4" width="4" height="16" rx="1.5"/>
+            <rect x="15" y="4" width="4" height="16" rx="1.5"/>
+        </svg>
+        <svg id="icon-play" class="hidden" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 4.75a.75.75 0 0 0-1.17.62v13.26a.75.75 0 0 0 1.17.62l10.5-6.63a.75.75 0 0 0 0-1.24L6 4.75Z"/>
+        </svg>
+    </button>
+
+    <!-- Reset -->
+    <button id="btn-reset" title="Reset camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-4.9 5.9"/>
+        </svg>
+    </button>
+
+    <!-- Screenshot -->
+    <button id="btn-screenshot" title="Save screenshot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/>
+            <circle cx="12" cy="13" r="3"/>
+        </svg>
+    </button>
+
+</div>
+
+<!-- Mode pill (bottom-left) -->
+<button id="btn-mode" class="mode-pill ui-element" title="Toggle view mode">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    <span id="mode-label">shaded</span>
+</button>
+
+<!-- Edit shaders button (bottom-right) -->
+<button id="btn-edit" class="ui-element">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+        <path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/>
+        <path d="m13.5 6.5 4 4"/>
+    </svg>
+    edit shaders
+</button>
+
+<!-- Shader editor panel -->
+<div id="editor-panel">
+    <div id="drag-handle"></div>
+
+    <div class="editor-header">
+        <div class="tabs">
+            <button id="tab-vert" class="active">vertex</button>
+            <button id="tab-frag">fragment</button>
+        </div>
+        <button id="close-editor" title="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16">
+                <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="editor-wrapper">
+        <div id="editor-vert" class="code-editor language-glsl"></div>
+        <div id="editor-frag" class="code-editor language-glsl hidden"></div>
+    </div>
+
+    <div id="error-tooltip" class="hidden">
+        <div class="error-title">compilation error</div>
+        <div class="error-msg" id="error-text"></div>
+    </div>
+
+    <div class="status-bar" id="compile-status">● live</div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

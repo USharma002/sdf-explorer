@@ -1,0 +1,270 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=DM+Sans:wght@300;400&display=swap');
+
+/* ── Variables ─────────────────────────────────────────────────────────────── */
+:root {
+    --bg:         #07080d;
+    --surface:    rgba(11, 12, 18, 0.97);
+    --border:     rgba(255, 255, 255, 0.08);
+    --border-hi:  rgba(80, 180, 255, 0.45);
+    --accent:     #3eb8ff;
+    --accent-dim: rgba(62, 184, 255, 0.15);
+    --text:       rgba(220, 225, 235, 0.85);
+    --text-dim:   rgba(150, 160, 175, 0.6);
+    --mono:       'JetBrains Mono', monospace;
+    --sans:       'DM Sans', sans-serif;
+    --radius:     6px;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+body, html {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: var(--sans);
+    color: var(--text);
+}
+
+/* ── Canvas ────────────────────────────────────────────────────────────────── */
+#canvas-container {
+    position: fixed; inset: 0; z-index: 1;
+}
+
+/* ── UI layer ──────────────────────────────────────────────────────────────── */
+.ui-element {
+    position: absolute;
+    z-index: 20;
+    transition: opacity 0.4s ease;
+}
+.ui-element.idle {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ── Circle controls (top-right) ───────────────────────────────────────────── */
+.circle-controls {
+    top: 24px; right: 24px;
+    display: flex; gap: 8px; align-items: center;
+}
+
+.circle-controls button {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgba(7, 8, 13, 0.7);
+    color: var(--text-dim);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: border-color 0.18s, color 0.18s, background 0.18s,
+                box-shadow 0.18s, transform 0.12s;
+}
+.circle-controls button svg { width: 14px; height: 14px; display: block; }
+.circle-controls button svg.hidden { display: none; }
+
+.circle-controls button:hover {
+    border-color: var(--border-hi);
+    color: var(--accent);
+    background: var(--accent-dim);
+    box-shadow: 0 0 14px rgba(62, 184, 255, 0.2);
+}
+.circle-controls button:active { transform: scale(0.93); }
+.circle-controls button.active-btn {
+    border-color: var(--border-hi);
+    color: var(--accent);
+    background: var(--accent-dim);
+}
+
+/* ── Mode pill (bottom-left) ───────────────────────────────────────────────── */
+.mode-pill {
+    bottom: 28px; left: 28px;
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: rgba(7, 8, 13, 0.75);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: border-color 0.18s, color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+.mode-pill:hover {
+    border-color: var(--border-hi);
+    color: var(--accent);
+    background: var(--accent-dim);
+}
+.mode-pill.active-btn {
+    border-color: rgba(255, 160, 60, 0.5);
+    color: #ffaa40;
+    background: rgba(255, 140, 40, 0.1);
+}
+
+/* ── Edit shaders button (bottom-right) ────────────────────────────────────── */
+#btn-edit {
+    bottom: 28px; right: 28px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(7, 8, 13, 0.75);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: border-color 0.18s, color 0.18s, background 0.18s, box-shadow 0.18s;
+    animation: softpulse 4s ease-in-out infinite;
+}
+#btn-edit:hover {
+    border-color: var(--border-hi);
+    color: var(--accent);
+    background: var(--accent-dim);
+    box-shadow: 0 0 18px rgba(62, 184, 255, 0.15);
+    animation: none;
+}
+@keyframes softpulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(62, 184, 255, 0); }
+    50%       { box-shadow: 0 0 0 6px rgba(62, 184, 255, 0.08); }
+}
+
+/* ── Editor panel ──────────────────────────────────────────────────────────── */
+#editor-panel {
+    position: absolute; inset-block: 0; left: 0;
+    width: 580px; min-width: 300px; max-width: 88vw;
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    display: flex; flex-direction: column;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.38s cubic-bezier(0.2, 0.85, 0.2, 1);
+    border-right: 1px solid var(--border);
+}
+#editor-panel.open { transform: translateX(0); }
+#editor-panel.resizing { transition: none; }
+#editor-panel.resizing * { pointer-events: none; }
+
+#drag-handle {
+    position: absolute; top: 0; right: -6px; bottom: 0;
+    width: 12px; cursor: ew-resize; z-index: 101;
+}
+#drag-handle::after {
+    content: '';
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px; height: 40px;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background 0.2s;
+}
+#drag-handle:hover::after { background: var(--border-hi); }
+
+/* ── Editor header ─────────────────────────────────────────────────────────── */
+.editor-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
+.tabs {
+    display: flex; gap: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 3px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+}
+.tabs button {
+    background: transparent; border: none;
+    color: var(--text-dim);
+    padding: 5px 14px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.tabs button.active  { background: var(--accent-dim); color: var(--accent); }
+.tabs button:hover:not(.active) { color: var(--text); }
+
+#close-editor {
+    background: none; border: none;
+    color: var(--text-dim); cursor: pointer;
+    display: flex; align-items: center;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+}
+#close-editor:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+/* ── Code editor ───────────────────────────────────────────────────────────── */
+.editor-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+.code-editor {
+    width: 100%; height: 100%;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    background: transparent !important;
+    padding: 16px 20px;
+    outline: none;
+    overflow: auto;
+    tab-size: 4;
+}
+.code-editor.hidden { display: none; }
+
+/* Prism overrides — blend with dark panel */
+pre[class*="language-"],
+code[class*="language-"] {
+    text-shadow: none !important;
+    background: transparent !important;
+}
+
+/* ── Error tooltip ─────────────────────────────────────────────────────────── */
+#error-tooltip {
+    margin: 0 12px 12px;
+    background: rgba(30, 6, 6, 0.96);
+    border-left: 3px solid #ff3355;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+}
+#error-tooltip.hidden { display: none; }
+
+.error-title {
+    color: #ff3355;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.error-msg {
+    color: rgba(255, 180, 190, 0.85);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+/* ── Status bar ────────────────────────────────────────────────────────────── */
+.status-bar {
+    padding: 7px 16px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
