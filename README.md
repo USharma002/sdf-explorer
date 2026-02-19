@@ -1,5 +1,5 @@
-# sdf-explorer
-A simple Signed Distance Field viewer
+# Signed Distance Field Explorer
+A real-time Signed Distance Field (SDF) raymarching engine built with WebGL 2.0 (#version 300 es) and Three.js. It features a live-editable shader UI, allowing for rapid experimentation with mathematical geometry, boolean operations, and advanced lighting.
 
 ## Render Mode Comparison
 
@@ -10,7 +10,7 @@ A simple Signed Distance Field viewer
 
 | Depthmap | Step Count Heatmap |
 | :---: | :---: |
-| <img src="media/depthmap.png" width="100%"> | <img src="media/normals.png" width="100%"> |
+| <img src="media/depthmap.png" width="100%"> | <img src="media/heatmap.png" width="100%"> |
 | *Depth map of surface* | *Number of steps* |
 
 ## Observations
