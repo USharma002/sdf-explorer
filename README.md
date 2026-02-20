@@ -1,19 +1,30 @@
 # Signed Distance Field Explorer
-A real-time Signed Distance Field (SDF) raymarching engine built with WebGL 2.0 (#version 300 es) and Three.js. It features a live-editable shader UI, allowing for rapid experimentation with mathematical geometry, boolean operations, and advanced lighting.
+A real-time Signed Distance Field (SDF) raymarching engine built with WebGL 2.0 (#version 300 es) and Three.js. It features a live-editable shader UI, allowing for rapid experimentation with mathematical geometry, boolean operations, and PBR lighting.
+
+Main motivation of creation was to learn more about the signed distance fields and operations on them while also looking at the live changes and debug visualizations.
 
 ## Render Mode Comparison
 
-| Standard RGB | Surface Normals |
-| :---: | :---: |
-| <img src="media/rgb.png" width="100%"> | <img src="media/normals.png" width="100%"> |
-| *Final shading with light.* | *Gradient vectors.* |
+| PBR Shaded | Surface Normals | Analytical Slice |
+| :---: | :---: | :---: |
+| <img src="media/rgb.png" width="100%"> | <img src="media/normals.png" width="100%"> | <img src="media/slice.png" width="100%"> |
+| *Full lighting & soft shadows.* | *Gradient vectors.* | *Cross-section & contours.* |
 
-| Depthmap | Step Count Heatmap |
-| :---: | :---: |
-| <img src="media/depthmap.png" width="100%"> | <img src="media/heatmap.png" width="100%"> |
-| *Depth map of surface* | *Number of steps* |
+| Depthmap | Step Count Heatmap | Ambient Occlusion |
+| :---: | :---: | :---: |
+| <img src="media/depthmap.png" width="100%"> | <img src="media/heatmap.png" width="100%"> | <img src="media/ao.png" width="100%"> |
+| *Surface depth map.* | *Rendering iteration cost.* | *Proximity shadowing.* |
+
+
 
 ## Observations
-- As expected, around the edges of the primitives, more steps are required.
-- We can union the primitives smoothly
-- The render is sensitive to number of steps and epsilon
+- **PBR Pipeline:** Implements Cook-Torrance BRDF with adjustable metalness and roughness.
+- **Slicing Engine:** Enables 3D plane-clipping with procedural ISO-contours for field debugging.
+- **Optimization:** Render cost increases at object silhouettes, visible in heatmap mode.
+- **Blending:** Uses polynomial smooth union for organic transitions between primitives.
+
+## Features
+- **Live Editor:** Hot-reloading GLSL editor with error tooltips.
+- **Diagnostic Tools:** Toggle between distinct visualization modes.
+- **Soft Shadows:** Distance-aware penumbra estimation.
+- **Camera:** Orbit controls with position/matrix persistence for shaders.

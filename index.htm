@@ -5,30 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SDF Sandbox</title>
     <link rel="stylesheet" href="style.css">
-
-    <!-- Prism — GLSL syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-glsl.min.js"></script>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three":   "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "codejar": "https://unpkg.com/codejar@3.7.0/codejar.js"
-        }
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+        "codemirror": "https://unpkg.com/codemirror@6.0.1/dist/index.js",
+        "@codemirror/view": "https://unpkg.com/@codemirror/view@6.23.0/dist/index.js",
+        "@codemirror/state": "https://unpkg.com/@codemirror/state@6.4.0/dist/index.js",
+        "@codemirror/commands": "https://unpkg.com/@codemirror/commands@6.3.3/dist/index.js",
+        "@codemirror/language": "https://unpkg.com/@codemirror/language@6.10.0/dist/index.js",
+        "@codemirror/lang-cpp": "https://unpkg.com/@codemirror/lang-cpp@6.0.2/dist/index.js",
+        "@codemirror/search": "https://unpkg.com/@codemirror/search@6.5.5/dist/index.js",
+        "@codemirror/autocomplete": "https://unpkg.com/@codemirror/autocomplete@6.11.1/dist/index.js",
+        "@codemirror/lint": "https://unpkg.com/@codemirror/lint@6.4.2/dist/index.js",
+        "@lezer/cpp": "https://unpkg.com/@lezer/cpp@1.1.2/dist/index.js",
+        "@lezer/lr": "https://unpkg.com/@lezer/lr@1.3.14/dist/index.js",
+        "@lezer/highlight": "https://unpkg.com/@lezer/highlight@1.2.0/dist/index.js",
+        "@lezer/common": "https://unpkg.com/@lezer/common@1.2.1/dist/index.js",
+        "style-mod": "https://unpkg.com/style-mod@4.1.2/src/style-mod.js",
+        "w3c-keyname": "https://unpkg.com/w3c-keyname@2.2.8/index.js",
+        "crelt": "https://unpkg.com/crelt@1.0.6/index.js"
     }
-    </script>
+}
+</script>
+
 </head>
 <body>
 
 <div id="canvas-container"></div>
 
-<!-- Top-right controls -->
+<!-- ── Top-right circle controls ────────────────────────────────────────────── -->
 <div class="circle-controls ui-element">
-
-    <!-- Pause / Play -->
     <button id="btn-pause" title="Pause / Play">
         <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor">
             <rect x="5" y="4" width="4" height="16" rx="1.5"/>
@@ -38,36 +46,138 @@
             <path d="M6 4.75a.75.75 0 0 0-1.17.62v13.26a.75.75 0 0 0 1.17.62l10.5-6.63a.75.75 0 0 0 0-1.24L6 4.75Z"/>
         </svg>
     </button>
-
-    <!-- Reset -->
     <button id="btn-reset" title="Reset camera">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-4.9 5.9"/>
         </svg>
     </button>
-
-    <!-- Screenshot -->
+    <button id="btn-floor" title="Toggle floor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="18" x2="21" y2="18"/>
+            <rect x="7" y="5" width="10" height="9" rx="1"/>
+        </svg>
+    </button>
     <button id="btn-screenshot" title="Save screenshot">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/>
             <circle cx="12" cy="13" r="3"/>
         </svg>
     </button>
-
 </div>
 
-<!-- Mode pill (bottom-left) -->
-<button id="btn-mode" class="mode-pill ui-element" title="Toggle view mode">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
-        <rect x="3" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="3" width="7" height="7" rx="1"/>
-        <rect x="3" y="14" width="7" height="7" rx="1"/>
-        <rect x="14" y="14" width="7" height="7" rx="1"/>
-    </svg>
-    <span id="mode-label">shaded</span>
-</button>
+<!-- ── Slice controls panel ──────────────────────────────────────────────────── -->
+<div id="slice-panel" class="controls-panel ui-element">
+    <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        SDF Slice
+    </div>
 
-<!-- Edit shaders button (bottom-right) -->
+    <div class="ctrl-row">
+        <label class="ctrl-label">offset</label>
+        <input type="range" id="slice-offset" min="-3.0" max="3.0" step="0.01" value="0">
+        <span class="ctrl-val" id="slice-offset-val">0.00</span>
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">yaw</label>
+        <input type="range" id="slice-yaw" min="-180" max="180" step="1" value="0">
+        <span class="ctrl-val" id="slice-yaw-val">0°</span>
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">pitch</label>
+        <input type="range" id="slice-pitch" min="-85" max="85" step="1" value="0">
+        <span class="ctrl-val" id="slice-pitch-val">0°</span>
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">contours</label>
+        <input type="range" id="contour-spacing" min="0.04" max="0.5" step="0.01" value="0.15">
+        <span class="ctrl-val" id="contour-spac-val">0.15</span>
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">line width</label>
+        <input type="range" id="contour-width" min="0.001" max="0.012" step="0.001" value="0.003">
+        <span class="ctrl-val" id="contour-width-val">0.003</span>
+    </div>
+
+    
+
+    <!-- No color legend — colors are defined in the fragment shader and may be changed -->
+    <div class="panel-note">Colors editable in fragment shader</div>
+</div>
+
+<!-- ── PBR controls panel ────────────────────────────────────────────────────── -->
+<div id="pbr-panel" class="controls-panel ui-element">
+    <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        Shading
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">roughness</label>
+        <input type="range" id="pbr-roughness" min="0.02" max="1.0" step="0.01" value="0.4">
+        <span class="ctrl-val" id="pbr-roughness-val">0.40</span>
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">metalness</label>
+        <input type="range" id="pbr-metalness" min="0.0" max="1.0" step="0.01" value="0.0">
+        <span class="ctrl-val" id="pbr-metalness-val">0.00</span>
+    </div>
+
+    <div class="ctrl-row color-row">
+        <div class="color-group">
+            <label class="ctrl-label">color A</label>
+            <input type="color" id="pbr-color1" value="#6699cc" class="color-swatch">
+        </div>
+        <div class="color-group">
+            <label class="ctrl-label">color B</label>
+            <input type="color" id="pbr-color2" value="#cc8844" class="color-swatch">
+        </div>
+    </div>
+
+    <div class="panel-note">Colors passed as uColor1/uColor2 uniforms.<br>Override getBaseColor() in the shader for full control.</div>
+</div>
+
+<!-- ── Heatmap controls panel ─────────────────────────────────────────────────── -->
+<div id="heat-panel" class="controls-panel ui-element">
+    <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M12 2a5 5 0 0 0-5 5c0 5.25 5 13 5 13s5-7.75 5-13a5 5 0 0 0-5-5Z"/></svg>
+        Heatmap
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">colormap</label>
+        <select id="cm-select"></select>
+    </div>
+
+    <div id="cm-swatch" class="cm-swatch-bar"></div>
+</div>
+
+<!-- ── Bottom-left: mode pill + menu trigger ─────────────────────────────────── -->
+<div class="mode-row ui-element">
+    <button id="btn-mode" class="mode-pill" title="Click to cycle modes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        <span id="mode-label">shaded</span>
+    </button>
+
+    <!-- Small circle that opens a vertical mode list -->
+    <div class="mode-menu-wrap">
+        <button id="btn-mode-menu" class="mode-menu-btn" title="Pick mode">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
+        <ul id="mode-menu-list" class="mode-menu-list"></ul>
+    </div>
+</div>
+
+<!-- ── Edit shaders button (bottom-right) ───────────────────────────────────── -->
 <button id="btn-edit" class="ui-element">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
         <path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/>
@@ -76,10 +186,9 @@
     edit shaders
 </button>
 
-<!-- Shader editor panel -->
+<!-- ── Shader editor panel ───────────────────────────────────────────────────── -->
 <div id="editor-panel">
     <div id="drag-handle"></div>
-
     <div class="editor-header">
         <div class="tabs">
             <button id="tab-vert" class="active">vertex</button>
@@ -91,17 +200,14 @@
             </svg>
         </button>
     </div>
-
     <div class="editor-wrapper">
         <div id="editor-vert" class="code-editor language-glsl"></div>
         <div id="editor-frag" class="code-editor language-glsl hidden"></div>
     </div>
-
     <div id="error-tooltip" class="hidden">
         <div class="error-title">compilation error</div>
         <div class="error-msg" id="error-text"></div>
     </div>
-
     <div class="status-bar" id="compile-status">● live</div>
 </div>
 
