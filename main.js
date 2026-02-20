@@ -11,6 +11,7 @@ import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 
 
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/TransformControls.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State
@@ -23,6 +24,9 @@ let controls;
 let compileTimer;
 let editorVertView, editorFragView;
 let sdfCamera, pixelRatio;
+// Add these to your state variables
+let proxyGroup, transformControl, raycaster, mouse;
+let isGizmoDragging = false; 
 
 const scheduleCompile = () => {
     setStatus('typing');
@@ -309,15 +313,140 @@ function buildScene(vert, frag) {
         uSweepPhase:         { value: 0.0 },
     };
 
+    // Main SDF Material and Quad
     material = new THREE.RawShaderMaterial({
-        vertexShader:   clean(vert),
+        vertexShader: clean(vert),
         fragmentShader: clean(frag),
         uniforms,
         glslVersion: THREE.GLSL3,
     });
-
-    quad = new THREE.Mesh(new THREE.PlaneGeometry(2,2), material);
+    quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
     scene.add(quad);
+
+    // Gizmo and Proxy Setup
+    transformControl = new TransformControls(sdfCamera, renderer.domElement);
+    
+    transformControl.addEventListener('dragging-changed', (event) => {
+        controls.enabled = !event.value;
+        isGizmoDragging = event.value; 
+        if (transformControl.object) {
+            // Visual feedback: Make the wireframe box visible when dragging
+            transformControl.object.material.visible = event.value;
+            transformControl.object.material.color.setHex(event.value ? 0xffff00 : 0x00ffaa);
+        }
+    });
+
+    // VERY IMPORTANT: Only add to proxyScene, nowhere else
+    proxyScene.add(transformControl);
+
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    // Attach logic
+    renderer.domElement.addEventListener('pointerdown', (event) => {
+        if (isGizmoDragging) return;
+
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, sdfCamera);
+        const intersects = raycaster.intersectObjects(proxyScene.children, true);
+
+        if (intersects.length > 0) {
+            // Find the actual proxy mesh (ignore gizmo parts)
+            const target = intersects.find(i => i.object.userData.matchIndex !== undefined);
+            if (target) {
+                const proxy = target.object;
+                if (transformControl.object === proxy) {
+                    transformControl.detach();
+                    proxy.material.visible = false;
+                } else {
+                    proxyScene.children.forEach(c => { if(c.material) c.material.visible = false; });
+                    transformControl.attach(proxy);
+                    proxy.material.visible = true;
+                }
+            }
+        } else {
+            transformControl.detach();
+            proxyScene.children.forEach(c => { if(c.material) c.material.visible = false; });
+        }
+    });
+
+    // Code update logic
+    transformControl.addEventListener('change', () => {
+        if (!isGizmoDragging || !transformControl.object) return;
+        const obj = transformControl.object;
+        const data = obj.userData;
+        const doc = editorFragView.state.doc.toString();
+        const localRegex = new RegExp(gizmoRegex);
+        let match, currentIndex = 0;
+        while ((match = localRegex.exec(doc)) !== null) {
+            if (currentIndex === data.matchIndex) {
+                const startPos = match.index;
+                const endPos = startPos + match[0].length;
+                const pX = obj.position.x.toFixed(2), pY = obj.position.y.toFixed(2), pZ = obj.position.z.toFixed(2);
+                const s = data.size.toFixed(2);
+                const newText = `sdBox(p - vec3(${pX}, ${pY}, ${pZ}), vec3(${s})); // @gizmo`;
+                editorFragView.dispatch({ changes: { from: startPos, to: endPos, insert: newText } });
+                break;
+            }
+            currentIndex++;
+        }
+    });
+}
+
+
+
+// This regex captures: 1:x, 2:y, 3:z (position) AND 4:size (assumes uniform size vec3(s))
+const gizmoRegex = /sdBox\s*\(\s*p\s*-\s*vec3\(\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*\)\s*,\s*vec3\(\s*(\d+\.?\d*)\s*\)\s*\)\s*;\s*\/\/\s*@gizmo/g;
+
+// Create a separate scene for proxies so the Quad doesn't show up in 3D
+const proxyScene = new THREE.Scene();
+
+function syncGizmos(code) {
+    if (isGizmoDragging) return; 
+
+    const matches = [];
+    gizmoRegex.lastIndex = 0;
+    let match;
+    while ((match = gizmoRegex.exec(code)) !== null) {
+        matches.push({
+            pos: new THREE.Vector3(parseFloat(match[1]), parseFloat(match[2]), parseFloat(match[3])),
+            size: parseFloat(match[4]),
+            index: matches.length
+        });
+    }
+
+    // Remove deleted proxies
+    const currentProxies = proxyScene.children.filter(c => c.userData.matchIndex !== undefined);
+    while (currentProxies.length > matches.length) {
+        const last = currentProxies.pop();
+        if (transformControl.object === last) transformControl.detach();
+        proxyScene.remove(last);
+    }
+
+    const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+
+    matches.forEach((m, i) => {
+        let proxy = currentProxies[i];
+        if (!proxy) {
+            proxy = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({
+                color: 0x00ffaa,
+                transparent: true,
+                opacity: 0.4,
+                wireframe: true,
+                depthTest: true // Changed to true for correct 3D depth
+            }));
+            proxy.material.visible = false; // Hidden from eyes, visible to Raycaster
+            proxyScene.add(proxy);
+        }
+
+        proxy.position.copy(m.pos);
+        const s = m.size * 2.0;
+        proxy.scale.set(s, s, s);
+        proxy.userData = { matchIndex: m.index, size: m.size };
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -332,18 +461,32 @@ function animate() {
     const now = clock.getElapsedTime();
     const delta = now - lastTime;
     lastTime = now;
-
     stats.update(); 
     
     if (!isPaused) {
         uniforms.iTime.value = now;
-        // Cleanly accumulate the phase using the CURRENT speed and delta time
         uniforms.uSweepPhase.value += delta * uniforms.uSweepSpeed.value;
     }
     
     if (controls) controls.update();
-    if (sdfCamera) sdfCamera.updateMatrixWorld();
-    renderer.render(scene, camera);
+    if (sdfCamera) {
+        sdfCamera.updateMatrixWorld();
+        // Keep shader in sync with 3D camera
+        uniforms.uCameraPos.value.copy(sdfCamera.position);
+        uniforms.uCameraWorldMatrix.value.copy(sdfCamera.matrixWorld);
+        uniforms.uCameraProjectionMatrixInverse.value.copy(sdfCamera.projectionMatrixInverse);
+    }
+
+    // 1. Render the Background (SDF)
+    renderer.autoClear = true;
+    renderer.render(scene, camera); 
+
+    // 2. Render the Foreground (Gizmos & Proxies)
+    renderer.autoClear = false; // Don't wipe the SDF we just drew
+    renderer.clearDepth();      // Wipe the depth buffer so 3D objects draw correctly
+    
+    // proxyScene now contains both the proxies and the transformControl
+    renderer.render(proxyScene, sdfCamera);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -543,6 +686,8 @@ function compile() {
     const gl   = renderer.getContext();
     const vSrc = editorVertView.state.doc.toString();
     const fSrc = editorFragView.state.doc.toString();
+    syncGizmos(fSrc);
+
     const vErr = shaderError(gl, gl.VERTEX_SHADER,   vSrc, 'Vertex');
     if (vErr) { setStatus('error', vErr); return; }
     const fErr = shaderError(gl, gl.FRAGMENT_SHADER, fSrc, 'Fragment');

@@ -77,6 +77,8 @@ float opSmoothUnion(float a, float b, float k) {
     return mix(b,a,h) - k*h*(1.0-h);
 }
 
+
+
 // Defines the core geometry: an animated sphere and box blended together
 vec2 mapObjects(vec3 p) {
     // Oscillating sphere
@@ -432,7 +434,7 @@ vec3 shadeGlass(vec3 pos, vec3 nor, vec3 rd, MatDef m) {
     {
         // March until we leave the glass (SDF goes positive from inside)
         float t = 0.002;
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 64; i++) {
             float d = -map(pIn + rdG*t).x; // Negative inside = positive distance to exit
             if (d < 0.0005 || t > 4.0) break;
             t += d * 0.5; // Conservative step inside concave SDF
