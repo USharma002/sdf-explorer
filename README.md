@@ -1,4 +1,6 @@
-# Signed Distance Field Explorer
+# Signed Distance Field Explorer 
+[![Live Demo](https://img.shields.io/badge/▶_Live_Demo-Open_WebGL_App-4dffaa?style=for-the-badge)](https://usharma002.github.io/sdf-explorer/)
+
 A real-time Signed Distance Field (SDF) raymarching engine built with WebGL 2.0 (#version 300 es) and Three.js. It features a live-editable shader UI, allowing for rapid experimentation with mathematical geometry, boolean operations, and PBR lighting.
 
 Main motivation of creation was to learn more about the signed distance fields and operations on them while also looking at the live changes and debug visualizations.
