@@ -423,3 +423,6 @@ body, html {
     letter-spacing:.05em; color:var(--text-dim);
     border-top:1px solid var(--border); background:rgba(0,0,0,.3); flex-shrink:0;
 }
+#stats {
+    z-index: 50 !important;
+}

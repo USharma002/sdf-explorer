@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import Stats from 'three/addons/libs/stats.module.js';
 
 import { EditorView, basicSetup } from "codemirror";
 import { keymap } from "@codemirror/view";
@@ -7,6 +8,7 @@ import { indentWithTab } from "@codemirror/commands";
 import { selectNextOccurrence } from "@codemirror/search";
 import { tags as t } from "@lezer/highlight";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+
 
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
@@ -207,17 +209,40 @@ function createEditor(element, initialCode, onUpdate) {
     });
 }
 
+let stats;
 // ─────────────────────────────────────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────────────────────────────────────
 async function init() {
     scene  = new THREE.Scene();
     camera = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
-    renderer = new THREE.WebGLRenderer({ antialias:false, preserveDrawingBuffer:true });
+    renderer = new THREE.WebGLRenderer({ 
+        antialias: false, 
+        preserveDrawingBuffer: true,
+        powerPreference: "high-performance"
+    });
+
+    const gl = renderer.getContext();
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+
+    if (debugInfo) {
+        const rendererName = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        console.log("Currently rendering on: ", rendererName);
+    } else {
+        console.log("Could not read GPU info.");
+    }
+    
     renderer.setSize(window.innerWidth, window.innerHeight);
     pixelRatio = Math.min(window.devicePixelRatio, 2);
     renderer.setPixelRatio(pixelRatio);
     dom.canvas.appendChild(renderer.domElement);
+
+    // Initialize Stats
+    stats = new Stats();
+    stats.dom.style.zIndex = '50';
+
+    // stats.showPanel(0); // 0: fps, 1: ms, 2: mb
+    document.body.appendChild(stats.dom);
 
     try {
         const [vert, frag] = await Promise.all([
@@ -308,6 +333,8 @@ function animate() {
     const delta = now - lastTime;
     lastTime = now;
 
+    stats.update(); 
+    
     if (!isPaused) {
         uniforms.iTime.value = now;
         // Cleanly accumulate the phase using the CURRENT speed and delta time
