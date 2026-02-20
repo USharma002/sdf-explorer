@@ -467,7 +467,7 @@ function setupUI() {
     slider('slice-pitch',    'slice-pitch-val',     'uSlicePitch',     v => v.toFixed(0) + '°');
     slider('contour-spacing','contour-spac-val',    'uContourSpacing', v => v.toFixed(2));
     slider('contour-width',  'contour-width-val',   'uContourWidth',   v => v.toFixed(3));
-    slider('slice-sweep',    'slice-sweep-val',    'uSweepSpeed',         v => v.toFixed(1));
+    slider('slice-sweep',    'slice-sweep-val',    'uSweepSpeed',         v => v.toFixed(0));
     slider('slice-opacity',  'slice-opacity-val',  'uSliceObjectOpacity', v => v.toFixed(2));
 
     // ── PBR sliders ───────────────────────────────────────────────────────────
