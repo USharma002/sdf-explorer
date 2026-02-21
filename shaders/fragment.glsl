@@ -389,6 +389,20 @@ vec4 getSliceColor(vec3 p) {
     return vec4(col, alpha);
 }
 
+// ── Curvature Estimation ─────────────────────────────────────────────────────
+float calcCurvature(vec3 p) {
+    const float e = 0.01; // Step size for finite difference
+    float d = map(p).x;
+    
+    // The Laplacian of an SDF yields twice the mean curvature
+    float laplacian = 
+        map(p + vec3(e, 0, 0)).x + map(p - vec3(e, 0, 0)).x +
+        map(p + vec3(0, e, 0)).x + map(p - vec3(0, e, 0)).x +
+        map(p + vec3(0, 0, e)).x + map(p - vec3(0, 0, e)).x - 6.0 * d;
+        
+    return laplacian / (e * e);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 void main() {
     vec2 ndc = (gl_FragCoord.xy/iResolution.xy)*2.0-1.0;
@@ -486,6 +500,21 @@ void main() {
         } else if (iMode == 5) {
             // ── AO MODE ──────────────────────────────────────────────────────────
             outCol = vec3(ao) * vec3(0.55, 0.65, 1.0) + vec3(0.0, 0.0, 0.04);
+        } else if (iMode == 6) {
+            // ── CURVATURE MODE ───────────────────────────────────────────────────
+            float curv = calcCurvature(pos);
+            
+            // Multiply by a small factor to scale the visual sensitivity. 
+            // Adjust this 0.02 if the colors are too blown out or too subtle.
+            float c = clamp(curv * 0.02, -1.0, 1.0); 
+            
+            vec3 concaveCol = vec3(0.1, 0.4, 0.9); // Deep blue for inner corners
+            vec3 flatCol    = vec3(0.2, 0.2, 0.2); // Dark grey for flat planes
+            vec3 convexCol  = vec3(1.0, 0.4, 0.1); // Bright orange for sharp outer edges
+            
+            if (c < 0.0) outCol = mix(flatCol, concaveCol, -c);
+            else         outCol = mix(flatCol, convexCol, c);
+            
         } else if (iMode == 2) {
             // ── NORMALS MODE ─────────────────────────────────────────────────────
             outCol = nor * 0.5 + 0.5;

@@ -240,6 +240,7 @@ const MODES = [
     { id:3, label:'depth',   cls:'mode-depth'   },
     { id:4, label:'slice',   cls:'mode-slice'   },
     { id:5, label:'ao',      cls:'mode-ao'      },
+    { id:6, label:'curvature', cls:'mode-curvature'}
 ];
 let currentMode = 0;
 
