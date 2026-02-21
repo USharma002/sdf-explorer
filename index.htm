@@ -4,28 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SDF Sandbox</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=DM+Sans:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="style.css">
 <script type="importmap">
 {
     "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
-        "codemirror": "https://unpkg.com/codemirror@6.0.1/dist/index.js",
-        "@codemirror/view": "https://unpkg.com/@codemirror/view@6.23.0/dist/index.js",
-        "@codemirror/state": "https://unpkg.com/@codemirror/state@6.4.0/dist/index.js",
-        "@codemirror/commands": "https://unpkg.com/@codemirror/commands@6.3.3/dist/index.js",
-        "@codemirror/language": "https://unpkg.com/@codemirror/language@6.10.0/dist/index.js",
-        "@codemirror/lang-cpp": "https://unpkg.com/@codemirror/lang-cpp@6.0.2/dist/index.js",
-        "@codemirror/search": "https://unpkg.com/@codemirror/search@6.5.5/dist/index.js",
-        "@codemirror/autocomplete": "https://unpkg.com/@codemirror/autocomplete@6.11.1/dist/index.js",
-        "@codemirror/lint": "https://unpkg.com/@codemirror/lint@6.4.2/dist/index.js",
-        "@lezer/cpp": "https://unpkg.com/@lezer/cpp@1.1.2/dist/index.js",
-        "@lezer/lr": "https://unpkg.com/@lezer/lr@1.3.14/dist/index.js",
-        "@lezer/highlight": "https://unpkg.com/@lezer/highlight@1.2.0/dist/index.js",
-        "@lezer/common": "https://unpkg.com/@lezer/common@1.2.1/dist/index.js",
-        "style-mod": "https://unpkg.com/style-mod@4.1.2/src/style-mod.js",
-        "w3c-keyname": "https://unpkg.com/w3c-keyname@2.2.8/index.js",
-        "crelt": "https://unpkg.com/crelt@1.0.6/index.js"
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "codemirror": "https://cdn.jsdelivr.net/npm/codemirror@6.0.1/dist/index.js",
+        "@codemirror/view": "https://cdn.jsdelivr.net/npm/@codemirror/view@6.23.0/dist/index.js",
+        "@codemirror/state": "https://cdn.jsdelivr.net/npm/@codemirror/state@6.4.0/dist/index.js",
+        "@codemirror/commands": "https://cdn.jsdelivr.net/npm/@codemirror/commands@6.3.3/dist/index.js",
+        "@codemirror/language": "https://cdn.jsdelivr.net/npm/@codemirror/language@6.10.0/dist/index.js",
+        "@codemirror/lang-cpp": "https://cdn.jsdelivr.net/npm/@codemirror/lang-cpp@6.0.2/dist/index.js",
+        "@codemirror/search": "https://cdn.jsdelivr.net/npm/@codemirror/search@6.5.5/dist/index.js",
+        "@codemirror/autocomplete": "https://cdn.jsdelivr.net/npm/@codemirror/autocomplete@6.11.1/dist/index.js",
+        "@codemirror/lint": "https://cdn.jsdelivr.net/npm/@codemirror/lint@6.4.2/dist/index.js",
+        "@lezer/cpp": "https://cdn.jsdelivr.net/npm/@lezer/cpp@1.1.2/dist/index.js",
+        "@lezer/lr": "https://cdn.jsdelivr.net/npm/@lezer/lr@1.3.14/dist/index.js",
+        "@lezer/highlight": "https://cdn.jsdelivr.net/npm/@lezer/highlight@1.2.0/dist/index.js",
+        "@lezer/common": "https://cdn.jsdelivr.net/npm/@lezer/common@1.2.1/dist/index.js",
+        "style-mod": "https://cdn.jsdelivr.net/npm/style-mod@4.1.2/src/style-mod.js",
+        "w3c-keyname": "https://cdn.jsdelivr.net/npm/w3c-keyname@2.2.8/index.js",
+        "crelt": "https://cdn.jsdelivr.net/npm/crelt@1.0.6/index.js"
     }
 }
 </script>
@@ -34,6 +40,31 @@
 <body>
 
 <div id="canvas-container"></div>
+<div id="boot-loader">
+    <div class="boot-loader-card">
+        <div id="boot-loader-title">Starting SDF Explorer</div>
+        <div class="boot-progress-track">
+            <div id="boot-progress-fill"></div>
+        </div>
+        <div id="boot-loader-step">Initializing…</div>
+    </div>
+</div>
+
+<!-- ── Viewport axis widget (top-left, next to FPS) ───────────────────────── -->
+<div id="axis-widget" aria-label="Viewport axis orientation">
+    <svg id="axis-svg" viewBox="0 0 80 80" width="80" height="80">
+        <circle cx="40" cy="40" r="36" class="axis-bg"/>
+        <line id="axis-line-x" x1="40" y1="40" x2="64" y2="40" class="axis-line axis-x"/>
+        <line id="axis-line-y" x1="40" y1="40" x2="40" y2="16" class="axis-line axis-y"/>
+        <line id="axis-line-z" x1="40" y1="40" x2="52" y2="52" class="axis-line axis-z"/>
+        <circle id="axis-dot-x" cx="64" cy="40" r="5" class="axis-dot axis-x"/>
+        <circle id="axis-dot-y" cx="40" cy="16" r="5" class="axis-dot axis-y"/>
+        <circle id="axis-dot-z" cx="52" cy="52" r="5" class="axis-dot axis-z"/>
+        <text id="axis-label-x" x="64" y="42" class="axis-label">X</text>
+        <text id="axis-label-y" x="40" y="18" class="axis-label">Y</text>
+        <text id="axis-label-z" x="52" y="54" class="axis-label">Z</text>
+    </svg>
+</div>
 
 <!-- ── Top-right circle controls ────────────────────────────────────────────── -->
 <div class="circle-controls ui-element">
@@ -61,6 +92,15 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/>
             <circle cx="12" cy="13" r="3"/>
+        </svg>
+    </button>
+    <button id="btn-gizmo-mode" title="Toggle gizmo mode (Move/Rotate)">
+        <span id="gizmo-mode-label">Move</span>
+    </button>
+    <button id="btn-camera" title="Camera controls">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 7l-7 5 7 5V7z"/>
+            <rect x="1" y="5" width="15" height="14" rx="2"/>
         </svg>
     </button>
 </div>
@@ -114,50 +154,65 @@
         <span class="ctrl-val" id="slice-opacity-val">0.50</span>
     </div>
 
-    <div id="managed-toolbar" class="ui-element">
-    <button onclick="addManagedShape('sphere')" title="Add Sphere">＋ Sphere</button>
-    <button onclick="addManagedShape('box')" title="Add Box">＋ Box</button>
-    <div class="divider"></div>
-    <button id="btn-delete-shape" class="btn-danger" title="Delete Selected (Del)">Delete</button>
-    </div>
-
-    
-
-    <!-- No color legend — colors are defined in the fragment shader and may be changed -->
     <div class="panel-note">Colors editable in fragment shader</div>
 </div>
 
-<!-- ── PBR controls panel ────────────────────────────────────────────────────── -->
-<div id="pbr-panel" class="controls-panel ui-element">
+<!-- ── Camera controls panel (top-right) ───────────────────────────────────── -->
+<div id="camera-panel" class="camera-panel ui-element">
     <div class="panel-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-        Shading
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Camera
     </div>
 
     <div class="ctrl-row">
-        <label class="ctrl-label">roughness</label>
-        <input type="range" id="pbr-roughness" min="0.02" max="1.0" step="0.01" value="0.4">
-        <span class="ctrl-val" id="pbr-roughness-val">0.40</span>
+        <label class="ctrl-label">fov</label>
+        <input type="range" id="cam-fov" min="20" max="110" step="1" value="40">
+        <span class="ctrl-val" id="cam-fov-val">40°</span>
     </div>
 
     <div class="ctrl-row">
-        <label class="ctrl-label">metalness</label>
-        <input type="range" id="pbr-metalness" min="0.0" max="1.0" step="0.01" value="0.0">
-        <span class="ctrl-val" id="pbr-metalness-val">0.00</span>
+        <label class="ctrl-label">near</label>
+        <input type="range" id="cam-near" min="0.05" max="5.0" step="0.05" value="0.10">
+        <span class="ctrl-val" id="cam-near-val">0.10</span>
     </div>
 
-    <div class="ctrl-row color-row">
-        <div class="color-group">
-            <label class="ctrl-label">color A</label>
-            <input type="color" id="pbr-color1" value="#6699cc" class="color-swatch">
-        </div>
-        <div class="color-group">
-            <label class="ctrl-label">color B</label>
-            <input type="color" id="pbr-color2" value="#cc8844" class="color-swatch">
-        </div>
+    <div class="ctrl-row">
+        <label class="ctrl-label">far</label>
+        <input type="range" id="cam-far" min="20" max="300" step="1" value="100">
+        <span class="ctrl-val" id="cam-far-val">100</span>
     </div>
 
-    <div class="panel-note">Colors passed as uColor1/uColor2 uniforms.<br>Override getBaseColor() in the shader for full control.</div>
+    <div class="ctrl-row">
+        <label class="ctrl-label">focus</label>
+        <input type="range" id="cam-focus" min="0.5" max="30" step="0.1" value="8.0">
+        <span class="ctrl-val" id="cam-focus-val">8.0</span>
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">aperture</label>
+        <input type="range" id="cam-aperture" min="0.0" max="1.0" step="0.01" value="0.0">
+        <span class="ctrl-val" id="cam-aperture-val">0.00</span>
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">focal mm</label>
+        <input type="range" id="cam-focal" min="12" max="120" step="1" value="50">
+        <span class="ctrl-val" id="cam-focal-val">50</span>
+    </div>
+
+    <div class="ctrl-row">
+        <label class="ctrl-label">sensor mm</label>
+        <input type="range" id="cam-sensor" min="12" max="70" step="1" value="36">
+        <span class="ctrl-val" id="cam-sensor-val">36</span>
+    </div>
+
+    <div class="panel-note">
+        intrinsics
+        <br>fx: <span id="cam-fx">0.00</span>
+        <br>fy: <span id="cam-fy">0.00</span>
+        <br>cx: <span id="cam-cx">0.50</span>
+        <br>cy: <span id="cam-cy">0.50</span>
+    </div>
 </div>
 
 <!-- ── Heatmap controls panel ─────────────────────────────────────────────────── -->
@@ -194,6 +249,196 @@
         </button>
         <ul id="mode-menu-list" class="mode-menu-list"></ul>
     </div>
+</div>
+
+<!-- ── Content browser toggle (bottom-center) ─────────────────────────────── -->
+<button id="btn-content" class="ui-element content-toggle" title="Toggle content browser">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
+        <rect x="3" y="4" width="7" height="7" rx="1"/>
+        <rect x="14" y="4" width="7" height="7" rx="1"/>
+        <rect x="3" y="13" width="7" height="7" rx="1"/>
+        <rect x="14" y="13" width="7" height="7" rx="1"/>
+    </svg>
+    content
+</button>
+
+<!-- ── Bottom Content Browser ────────────────────── -->
+<div id="content-bar" class="content-bar ui-element">
+    <div class="content-body-wrap">
+        <!-- Left Toolbar (Tabs) -->
+        <div id="content-tabs" class="content-tabs" role="tablist" aria-label="Content tabs">
+            <button class="content-tab active" data-tab="objects" role="tab" title="Scene Objects">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </button>
+            <button class="content-tab" data-tab="shapes" role="tab" title="Shapes Library">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </button>
+            <button class="content-tab" data-tab="materials" role="tab" title="Material Presets">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 4.2c3.11 2.31 3.86 6.74 1.71 10.05l-1.07 1.66A7 7 0 0 1 12.47 22H11.5a7 7 0 0 1-5.83-3.4l-1.07-1.66c-2.15-3.31-1.4-7.74 1.71-10.05L12 2.69z"/></svg>
+            </button>
+            <button class="content-tab" data-tab="ops" role="tab" title="CSG Operations">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="12" r="6"/><circle cx="16" cy="12" r="6"/></svg>
+            </button>
+            <div style="flex:1"></div>
+            <button id="content-close" class="content-tab close-tab" title="Close Toolbar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Middle (Horizontal Scrollable List) with its own top resize handle -->
+        <div id="content-list-pane" class="content-list-pane">
+            <div id="content-list-resize-handle" class="content-list-resize-handle" title="Drag to resize list"></div>
+            <div id="content-list-grid" class="content-list-grid"></div>
+            <div id="content-inline-hint" class="content-inline-hint hidden"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Floating Inspector Window ─────────────────────────────────────────── -->
+<div id="inspector-float" class="inspector-float hidden">
+    <!-- Title bar (drag handle) -->
+    <div id="inspector-float-titlebar" class="inspector-float-titlebar">
+        <div class="inspector-float-title-group">
+            <div id="inspector-title" class="asset-title">Inspector</div>
+            <div id="inspector-subtitle" class="asset-subtitle">Select an item</div>
+        </div>
+        <button id="inspector-close" class="asset-close" title="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div id="inspector-body" class="inspector-body">
+        <div id="inspector-shape" class="inspector-section hidden">
+            <div id="shape-editor" class="shape-editor">
+                <div class="shape-field">
+                    <label class="shape-label" for="shape-name">Name</label>
+                    <input id="shape-name" class="shape-input" type="text">
+                </div>
+                <div class="shape-field">
+                    <label class="shape-label">Pos</label>
+                    <div class="vec3-inputs">
+                        <input id="shape-pos-x" type="number" step="0.01">
+                        <input id="shape-pos-y" type="number" step="0.01">
+                        <input id="shape-pos-z" type="number" step="0.01">
+                    </div>
+                </div>
+                <div class="shape-field">
+                    <label class="shape-label">Rot</label>
+                    <div class="vec3-inputs">
+                        <input id="shape-rot-x" type="number" step="0.1">
+                        <input id="shape-rot-y" type="number" step="0.1">
+                        <input id="shape-rot-z" type="number" step="0.1">
+                    </div>
+                </div>
+                <div id="shape-radius-row" class="shape-field">
+                    <label class="shape-label" for="shape-radius">Radius</label>
+                    <input id="shape-radius" class="shape-input" type="number" min="0.01" step="0.01">
+                </div>
+                <div id="shape-size-row" class="shape-field">
+                    <label class="shape-label">Size</label>
+                    <div class="vec3-inputs">
+                        <input id="shape-size-x" type="number" min="0.01" step="0.01">
+                        <input id="shape-size-y" type="number" min="0.01" step="0.01">
+                        <input id="shape-size-z" type="number" min="0.01" step="0.01">
+                    </div>
+                </div>
+                <div class="shape-field">
+                    <label class="shape-label" for="shape-material">Material</label>
+                    <select id="shape-material" class="shape-select"></select>
+                </div>
+                <div class="shape-field">
+                    <label class="shape-label" for="shape-op">Operation</label>
+                    <select id="shape-op" class="shape-select">
+                        <option value="0">Union</option>
+                        <option value="1">Intersect</option>
+                        <option value="2">Subtract</option>
+                    </select>
+                </div>
+                <div id="shape-op-hint" class="shape-hint">Base shape always unions.</div>
+                <div class="shape-actions-inline">
+                    <button id="btn-delete-shape" class="btn-danger" title="Delete Selected (Del)">Delete Object</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="inspector-material" class="inspector-section hidden">
+            <div class="material-preview-wrap">
+                <canvas id="material-preview-canvas"></canvas>
+            </div>
+            <div class="shape-field">
+                <label class="shape-label" for="mat-roughness">Roughness</label>
+                <div class="slider-val-wrap">
+                    <input id="mat-roughness" class="shape-slider" type="range" min="0.0" max="1.0" step="0.01">
+                    <span class="ctrl-val" id="mat-roughness-val">0.00</span>
+                </div>
+            </div>
+            <div class="shape-field">
+                <label class="shape-label" for="mat-metalness">Metalness</label>
+                <div class="slider-val-wrap">
+                    <input id="mat-metalness" class="shape-slider" type="range" min="0.0" max="1.0" step="0.01">
+                    <span class="ctrl-val" id="mat-metalness-val">0.00</span>
+                </div>
+            </div>
+            <div class="shape-field">
+                <label class="shape-label" for="mat-ior">IOR</label>
+                <div class="slider-val-wrap">
+                    <input id="mat-ior" class="shape-slider" type="range" min="1.0" max="2.2" step="0.01">
+                    <span class="ctrl-val" id="mat-ior-val">1.00</span>
+                </div>
+            </div>
+            <div class="shape-field">
+                <label class="shape-label" for="mat-transmission">Transmit</label>
+                <div class="slider-val-wrap">
+                    <input id="mat-transmission" class="shape-slider" type="range" min="0.0" max="1.0" step="0.01">
+                    <span class="ctrl-val" id="mat-trans-val">0.00</span>
+                </div>
+            </div>
+            <div class="shape-field color-row">
+                    <div class="color-row-inner">
+                        <span class="color-row-label">Base Color</span>
+                        <div class="color-row-controls">
+                            <input id="mat-color" type="color" class="color-swatch-sm" value="#6699cc">
+                        </div>
+                    </div>
+                    <div class="color-row-inner">
+                        <span class="color-row-label">Gradient</span>
+                        <div class="color-row-controls">
+                            <label class="grad-toggle">
+                                <input id="mat-gradient-enabled" type="checkbox" class="shape-check">
+                                <span>Enable</span>
+                            </label>
+                            <input id="mat-gradient-color" type="color" class="color-swatch-sm" value="#cc8844">
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <div id="inspector-op" class="inspector-section hidden">
+            <div class="shape-field">
+                <label class="shape-label" for="op-editor-select">Op</label>
+                <select id="op-editor-select" class="shape-select">
+                    <option value="0">Union</option>
+                    <option value="1">Intersect</option>
+                    <option value="2">Subtract</option>
+                </select>
+            </div>
+            <div class="shape-actions-inline">
+                <button id="op-editor-apply" class="btn-soft" type="button">Apply to Shape</button>
+            </div>
+            <div id="op-editor-hint" class="shape-hint">
+                Operation evaluates against the previous shape order.
+            </div>
+        </div>
+    </div>
+
+    <!-- Resize handle (bottom-right corner) -->
+    <div class="inspector-float-resize-corner"></div>
+    <!-- Edge resize handles -->
+    <div class="inspector-float-resize-edge edge-n"></div>
+    <div class="inspector-float-resize-edge edge-s"></div>
+    <div class="inspector-float-resize-edge edge-e"></div>
+    <div class="inspector-float-resize-edge edge-w"></div>
 </div>
 
 <!-- ── Edit shaders button (bottom-right) ───────────────────────────────────── -->
